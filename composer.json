@@ -1,0 +1,15 @@
+{
+    "name": "bbt_php",
+    "type": "library",
+    "description" : "PhP library for interfacing with Beebotte",
+    "keywords": ["beebotte", "api", "rest", "pubsub", "restful", "iot", "internet of things", "device", "realtime", "connected", "websockets"],
+    "homepage": "https://github.com/beebotte/bbt_php",
+    "license": "MIT",
+    "require": {
+        "php": ">=5.2",
+        "ext-curl": "*"
+    },
+    "autoload": {
+        "classmap": [ "src/" ]
+    }
+}

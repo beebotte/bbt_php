@@ -1,6 +1,13 @@
 <?php
+ 
 include_once "bbt_exceptions.php";
 
+/**
+ * @package Beebotte
+ * PHP library for interfacing with Beebotte.
+ * Beebotte is a Cloud platform for the Internet of Things and real time connected applications
+ * Contains methods for sending persistent and transient messages and for reading data.
+ */
 class Beebotte
 {
     private $keyId = null;
@@ -14,6 +21,16 @@ class Beebotte
     private static $bulkWriteEndpoint  = "/api/resource/bulk_write";
     private static $publishEndpoint    = "/api/event/write";
 
+    /**
+     * Beebotte
+     *
+     * Constructor, initializes the Beebotte client connector API
+     *
+     * @param string $keyId required user's API key (access key) to be passed along the authentication parameters.
+     * @param string $secretKey required user's secret key to be used to sign API calls.
+     * @param string $hostname the host name where the API is implemented.
+     * @param short  $port The port number.
+     */
     public function __construct( $keyId, $secretKey, $hostname = "http://api.beebotte.com", $port = "80" )
     {
         $this->keyId     = $keyId;
@@ -22,6 +39,12 @@ class Beebotte
         $this->port      = $port;
     }
 
+    /**
+     * Checks if the given response data is OK or if an error occurred
+     *
+     * @param array $response required response containing the status code and data
+     * @return array response data in JSON if the status is OK, raises an exception otherwise (with the status code, error code and error message)
+     */
     private function processResponse ( $response )
     {
         $code   = $response['status'];
@@ -59,12 +82,28 @@ class Beebotte
         }
     }
     
+    /**
+     * Creates a signature of an API call to authenticate the user and verify message integrity.
+     *
+     * @param string $verb required The HTTP verb (method) in upper case.
+     * @param string $uri required the API endpoint containing the query parameters.
+     * @param string $date required The date on the caller side.
+     * @param string $c_type required The Content type header, should be application/json.
+     * @param string $c_md5 optional The content MD5 hash of the data to send (should be set for POST requests)
+     *
+     * @return string the signature (keyid:hash) of the API call to be added as authorization header in the request to send.
+     */
     private function signRequest($verb, $uri, $date, $c_type, $c_md5 = null)
     {
         $stringToSign = $verb . "\n" . $c_md5 . "\n" . $c_type . "\n" . $date . "\n" . $uri;
         return ($this->keyId . ":" . base64_encode(hash_hmac("sha1", $stringToSign, $this->secretKey, true)));
     }
 
+    /**
+     * Executes the HTTP call requests and returns a JSON object with status code and response data.
+     *
+     * @return array JSON object with status code and response data.
+     */
     private function exec_curl( $ch ) {
         $response = array();
 
@@ -76,6 +115,15 @@ class Beebotte
         return $this->processResponse( $response );
     }
 
+    /**
+     * Sends a POST request with the given data to the given URI endpoint and returns the response data.
+     *
+     * @param string $uri required the uri endpoint.
+     * @param string $body required the data to send.
+     * @param boolean $auth optional Indicates if the Post request should be authenticated (defaults to true).
+     * 
+     * @return array The response data in JSON format if success, raises an error or failure.
+     */
     private function postData($uri, $body, $auth = true)
     {
         # Set cURL options
@@ -107,6 +155,15 @@ class Beebotte
         return $this->exec_curl( $ch );
     }
 
+    /**
+     * Sends a GET request with the given query parameters to the given URI endpoint and returns the response data.
+     *
+     * @param string $uri required the uri endpoint.
+     * @param array $query required the query parameters in JSON format.
+     * @param boolean $auth optional Indicates if the Post request should be authenticated (defaults to true).
+     * 
+     * @return array The response data in JSON format if success, raises an error or failure.
+     */
     private function getData($uri, $query, $auth = true)
     {
         # Set cURL options
@@ -135,6 +192,23 @@ class Beebotte
         return $this->exec_curl( $ch );
     }
 
+    /**
+     * Public Read
+     * Reads data from the resource with the given metadata. This method expects the resource to have public access. 
+     * In Beebotte, resources follow a 3 level hierarchy: Device -> Service -> Resource
+     * Data is always associated with Resources.
+     * This call will not be signed (no authentication required) as the resource is public.
+     *
+     * @param string $owner required the owner (username) of the resource to read from.
+     * @param string $device required the device name.
+     * @param string $service required the service name.
+     * @param string $resource required the resource name to read from.
+     * @param integer $limit optional number of records to return.
+     * @param string $source optional indicates whether to read from live data or from historical statistics. Accepts ('live', 'hour', 'day', 'week', 'month').
+     * @param string $metric optional indicates the metric to read. This works only with $source different than 'live'. Accepts ('avg', 'min', 'max', 'count')
+     * 
+     * @return array of records (JSON) on success, raises an error or failure.
+     */
     public function publicRead( $owner, $device, $service, $resource, $limit = 1, $source = "live", $metric = "avg" )
     {
         $query = array();
@@ -151,6 +225,22 @@ class Beebotte
         return $response;
     }  
 
+    /**
+     * Read
+     * Reads data from the resource with the given metadata.  
+     * In Beebotte, resources follow a 3 level hierarchy: Device -> Service -> Resource
+     * Data is always associated with Resources.
+     * This call will be signed to authenticate the calling user.
+     *
+     * @param string $device required the device name.
+     * @param string $service required the service name.
+     * @param string $resource required the resource name to read from.
+     * @param integer $limit optional number of records to return.
+     * @param string $source optional indicates whether to read from live data or from historical statistics. Accepts ('live', 'hour', 'day', 'week', 'month').
+     * @param string $metric optional indicates the metric to read. This works only with $source different than 'live'. Accepts ('avg', 'min', 'max', 'count')
+     * 
+     * @return array of records (JSON) on success, raises an error or failure.
+     */
     public function read( $device, $service, $resource, $limit = 1, $source = "live", $metric = "avg" )
     {
         $query = array();
@@ -166,6 +256,22 @@ class Beebotte
         return $response;
     }  
 
+    /**
+     * Write (Persistent messages)
+     * Writes data to the resource with the given metadata. 
+     * In Beebotte, resources follow a 3 level hierarchy: Device -> Service -> Resource
+     * Data is always associated with Resources.
+     * This call will be signed to authenticate the calling user.
+     *
+     * @param string $device required the device name.
+     * @param string $service required the service name.
+     * @param string $resource required the resource name to read from.
+     * @param mixed $value required the value to write (persist).
+     * @param integer $ts optional timestamp in milliseconds (since epoch). If this parameter is not given, it will be automatically added with a value equal to the local system time.
+     * @param type $type optional default to 'attribute'. This is for future use.
+     * 
+     * @return boolean true on success, raises an error or failure.
+     */
     public function write( $device, $service, $resource, $value, $ts = null, $type = "attribute" )
     {
         $data = array();
@@ -179,6 +285,25 @@ class Beebotte
         return $response;
     }  
 
+    /**
+     * Bulk Write (Persistent messages)
+     * Writes an array of data in one API call. 
+     * In Beebotte, resources follow a 3 level hierarchy: Device -> Service -> Resource
+     * Data is always associated with Resources.
+     * This call will be signed to authenticate the calling user.
+     *
+     * @param string $device required the device name.
+     * @param array $data_array required the data array to send. Should follow the following format
+     * [{
+     *   string $service required the service name.
+     *   string resource required the resource name to read from.
+     *   mixed $value required the value to write (persist).
+     *   integer $ts optional timestamp in milliseconds (since epoch). If this parameter is not given, it will be automatically added with a value equal to the local system time.
+     *   type $type optional default to 'attribute'. This is for future use.
+     * }]
+     * 
+     * @return boolean true on success, raises an error or failure.
+     */
     public function bulkWrite( $device, $data_array )
     {
         $data = array();
@@ -190,6 +315,22 @@ class Beebotte
         return $response;
     }  
 
+    /**
+     * Publish (Transient messages)
+     * Publishes data to the resource with the given metadata. The published data will no be persisted. It will only be delivered to connected subscribers.
+     * In Beebotte, resources follow a 3 level hierarchy: Device -> Service -> Resource
+     * Data is always associated with Resources.
+     * This call will be signed to authenticate the calling user.
+     *
+     * @param string $device required the device name.
+     * @param string $service required the service name.
+     * @param string $resource required the resource name to read from.
+     * @param mixed $value required the value to write (persist).
+     * @param integer $ts optional timestamp in milliseconds (since epoch). If this parameter is not given, it will be automatically added with a value equal to the local system time.
+     * @param type $source optional additional data that will be appended to the published message. This can be a logical identifier (session id) of the originator. Use this as suits you.
+     * 
+     * @return boolean true on success, raises an error or failure.
+     */
     public function publish( $device, $service, $resource, $value, $ts = null, $source = null )
     {
         $data = array();
@@ -207,6 +348,20 @@ class Beebotte
         return $response;
     }  
 
+    /**
+     * Client Authentication (used for the Presence and Resource subscription process)
+     * Signs the given subscribe metadata and returns the signature.
+     *
+     * @param string $sid required the session id of the client.
+     * @param string $device required the device name. Should start with 'presence:' for presence channels and starts with 'private:' for private channels.
+     * @param string $service optional the service name.
+     * @param string $resource optional the resource name to read from.
+     * @param integer $ttl optional the number of seconds the signature should be considered as valid (currently ignored) for future use.
+     * @param boolean $read optional indicates if read access is requested.
+     * @param boolean $write optional indicates if write access is requested.
+     * 
+     * @return array containing 'auth' element with value equal to the generated signature.
+     */
     public function auth_client($sid, $device, $service = '*', $resource = '*', $ttl = 0, $read = false, $write = false)
     {
         $r = $read ? "true" : "false";
@@ -218,12 +373,30 @@ class Beebotte
     }
 }
 
+/**
+ * @class
+ * Utility class for dealing with Resources
+ * Contains methods for sending persistent and transient messages and for reading data.
+ * Mainly wrappers around Beebotte API calls. 
+ */
 class Resource {
     private $device   = null;
     private $serv  = null;
     private $res = null;
     private $bbt      = null;
 
+    /**
+     * Resource
+     *
+     * Constructor, initializes the Resource object.
+     * In Beebotte, resources follow a 3level hierarchy: Device -> Service -> Resource
+     * Data is always associated with Resources.
+     *
+     * @param object $bbt required reference to the Beebotte client connector.
+     * @param string $device required device name.
+     * @param string $service required service name.
+     * @param string $resource required resource name.
+     */
     public function __construct( $bbt, $device, $service, $resource )
     {
         $this->bbt    = $bbt;
@@ -232,14 +405,47 @@ class Resource {
         $this->res    = $resource;
     }
 
+    /**
+     * Write (Persistent messages)
+     * Writes data to this resource. 
+     * This call will be signed to authenticate the calling user.
+     *
+     * @param mixed $value required the value to write (persist).
+     * @param integer $ts optional timestamp in milliseconds (since epoch). If this parameter is not given, it will be automatically added with a value equal to the local system time.
+     * 
+     * @return boolean true on success, raises an error or failure.
+     */    
     public function write($value, $ts = null) {
         return $this->bbt->write($this->device, $this->serv, $this->res, $value, $ts);
     }
 
+    /**
+     * Publish (Transient messages)
+     * Publishes data to this resource.
+     * This call will be signed to authenticate the calling user.
+     *
+     * @param mixed $value required the value to write (persist).
+     * @param integer $ts optional timestamp in milliseconds (since epoch). If this parameter is not given, it will be automatically added with a value equal to the local system time.
+     * 
+     * @return boolean true on success, raises an error or failure.
+     */
     public function publish($value, $ts = null) {
         return $this->bbt->publish($this->device, $this->serv, $this->res, $value, $ts);
     }
 
+    /**
+     * Read
+     * Reads data from the this resource.
+     * If the owner is set (value different than null) the behavior is Public Read (no authentication).
+     * If the owner is null, the behaviour is authenticated read.      
+     *
+     * @param string $owner required the owner (username) of the resource to read from for public read. Null to read from the user's owned device.
+     * @param integer $limit optional number of records to return.
+     * @param string $source optional indicates whether to read from live data or from historical statistics. Accepts ('live', 'hour', 'day', 'week', 'month').
+     * @param string $metric optional indicates the metric to read. This works only with $source different than 'live'. Accepts ('avg', 'min', 'max', 'count')
+     * 
+     * @return array of records (JSON) on success, raises an error or failure.
+     */
     public function read($owner = null, $limit = 1, $source = "live", $metric = "avg") {
         if($owner != null) {
             return $this->bbt->publicRead($owner, $this->device, $this->serv, $this->res, $limit, $source, $metric);
@@ -248,6 +454,12 @@ class Resource {
         }
     }
 
+    /**
+     * Read
+     * Reads the last inserted record. 
+     *
+     * @return array the last inserted record on success, raises an error or failure.
+     */
     public function recentValue() {
         return $this->bbt->read($this->device, $this->serv, $this->res)[0];
     }

@@ -212,7 +212,9 @@ class Beebotte
         $r = $read ? "true" : "false";
         $w = $write? "true" : "false";
         $stringToSign = $sid . ":" . $device . "." . $service . "." . $resource . ":ttl=" . $ttl . ":read=" . $r . ":write=" . $w;
-        return ($this->keyId . ":" . base64_encode(hash_hmac("sha1", $stringToSign, $this->secretKey, true)));
+        $auth = array();
+        $auth["auth"] = $this->keyId . ":" . base64_encode(hash_hmac("sha1", $stringToSign, $this->secretKey, true));
+        return json_encode( $auth );
     }
 }
 

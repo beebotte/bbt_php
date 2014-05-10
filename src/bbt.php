@@ -265,7 +265,7 @@ class Beebotte
      *
      * @param string $device required the device name.
      * @param string $service required the service name.
-     * @param string $resource required the resource name to read from.
+     * @param string $resource required the resource name to write to.
      * @param mixed $value required the value to write (persist).
      * @param integer $ts optional timestamp in milliseconds (since epoch). If this parameter is not given, it will be automatically added with a value equal to the local system time.
      * @param type $type optional default to 'attribute'. This is for future use.
@@ -295,11 +295,11 @@ class Beebotte
      * @param string $device required the device name.
      * @param array $data_array required the data array to send. Should follow the following format
      * [{
-     *   string $service required the service name.
-     *   string resource required the resource name to read from.
-     *   mixed $value required the value to write (persist).
-     *   integer $ts optional timestamp in milliseconds (since epoch). If this parameter is not given, it will be automatically added with a value equal to the local system time.
-     *   type $type optional default to 'attribute'. This is for future use.
+     *   string service required the service name.
+     *   string resource required the resource name to write to.
+     *   mixed value required the value to write (persist).
+     *   integer ts optional timestamp in milliseconds (since epoch). If this parameter is not given, it will be automatically added with a value equal to the local system time.
+     *   string $type optional default to 'attribute'. This is for future use.
      * }]
      * 
      * @return boolean true on success, raises an error or failure.
@@ -317,15 +317,15 @@ class Beebotte
 
     /**
      * Publish (Transient messages)
-     * Publishes data to the resource with the given metadata. The published data will no be persisted. It will only be delivered to connected subscribers.
+     * Publishes data to the resource with the given metadata. The published data will not be persisted. It will only be delivered to connected subscribers.
      * In Beebotte, resources follow a 3 level hierarchy: Device -> Service -> Resource
      * Data is always associated with Resources.
      * This call will be signed to authenticate the calling user.
      *
      * @param string $device required the device name.
      * @param string $service required the service name.
-     * @param string $resource required the resource name to read from.
-     * @param mixed $value required the value to write (persist).
+     * @param string $resource required the resource name to publish to.
+     * @param mixed $value required the value to publish (transient).
      * @param integer $ts optional timestamp in milliseconds (since epoch). If this parameter is not given, it will be automatically added with a value equal to the local system time.
      * @param type $source optional additional data that will be appended to the published message. This can be a logical identifier (session id) of the originator. Use this as suits you.
      * 
@@ -424,7 +424,7 @@ class Resource {
      * Publishes data to this resource.
      * This call will be signed to authenticate the calling user.
      *
-     * @param mixed $value required the value to write (persist).
+     * @param mixed $value required the value to publish (transient).
      * @param integer $ts optional timestamp in milliseconds (since epoch). If this parameter is not given, it will be automatically added with a value equal to the local system time.
      * 
      * @return boolean true on success, raises an error or failure.
@@ -436,17 +436,17 @@ class Resource {
     /**
      * Read
      * Reads data from the this resource.
-     * If the owner is set (value different than null) the behavior is Public Read (no authentication).
+     * If the owner is set (value different than null) the behaviour is Public Read (no authentication).
      * If the owner is null, the behaviour is authenticated read.      
      *
-     * @param string $owner required the owner (username) of the resource to read from for public read. Null to read from the user's owned device.
      * @param integer $limit optional number of records to return.
+     * @param string $owner required the owner (username) of the resource to read from for public read. Null to read from the user's owned device.
      * @param string $source optional indicates whether to read from live data or from historical statistics. Accepts ('live', 'hour', 'day', 'week', 'month').
      * @param string $metric optional indicates the metric to read. This works only with $source different than 'live'. Accepts ('avg', 'min', 'max', 'count')
      * 
      * @return array of records (JSON) on success, raises an error or failure.
      */
-    public function read($owner = null, $limit = 1, $source = "live", $metric = "avg") {
+    public function read($limit = 1, $owner = null, $source = "live", $metric = "avg") {
         if($owner != null) {
             return $this->bbt->publicRead($owner, $this->device, $this->serv, $this->res, $limit, $source, $metric);
         }else {

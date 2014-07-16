@@ -15,11 +15,12 @@ class Beebotte
     private $port = null;
     private $hostname = null;
     
-    private static $publicReadEndpoint = "/api/public/resource";
-    private static $readEndpoint       = "/api/resource/read";
-    private static $writeEndpoint      = "/api/resource/write";
-    private static $bulkWriteEndpoint  = "/api/resource/bulk_write";
-    private static $publishEndpoint    = "/api/event/write";
+    private static $publicReadEndpoint  = "/v1/public/data/read";
+    private static $readEndpoint        = "/v1/data/read";
+    private static $writeEndpoint       = "/v1/data/write";
+    private static $bulkWriteEndpoint   = "/v1/data/write";
+    private static $publishEndpoint     = "/v1/data/publish";
+    private static $bulkPublishEndpoint = "/v1/data/publish";
 
     /**
      * Beebotte
@@ -55,29 +56,29 @@ class Beebotte
           $errcode = $data['error']['code'];
           $errmsg  = $data['error']['message'];
           if ($code == 400) {
-            if ($errcode == 1101) throw AuthenticationError( "Status: 400; Code 1101; Message: " . $errmsg );
-            elseif ($errcode == 1401) throw ParameterError("Status: 400; Code 1401; Message: " . $errmsg );
-            elseif ($errcode == 1403) throw BadRequestError("Status: 400; Code 1403; Message: " . $errmsg );
-            elseif ($errcode == 1404) throw TypeError("Status: 400; Code 1404; Message: " . $errmsg );
-            elseif ($errcode == 1405) throw BadTypeError("Status: 400; Code 1405; Message: " . $errmsg );
-            elseif ($errcode == 1406) throw PayloadLimitError("Status: 400; Code 1406; Message: " . $errmsg );
-            else throw UnexpectedError("Status: " . $code . "; Code " . $errcode . "; Message: " . $errmsg );
+            if ($errcode == 1101) throw new AuthenticationError( "Status: 400; Code 1101; Message: " . $errmsg );
+            elseif ($errcode == 1401) throw new ParameterError("Status: 400; Code 1401; Message: " . $errmsg );
+            elseif ($errcode == 1403) throw new BadRequestError("Status: 400; Code 1403; Message: " . $errmsg );
+            elseif ($errcode == 1404) throw new TypeError("Status: 400; Code 1404; Message: " . $errmsg );
+            elseif ($errcode == 1405) throw new BadTypeError("Status: 400; Code 1405; Message: " . $errmsg );
+            elseif ($errcode == 1406) throw new PayloadLimitError("Status: 400; Code 1406; Message: " . $errmsg );
+            else throw new UnexpectedError("Status: " . $code . "; Code " . $errcode . "; Message: " . $errmsg );
           } elseif ($code == 405) {
-            if ($errcode == 1102) throw NotAllowedError("Status: 405; Code 1102; Message: %s" % errmsg);
-            else throw UnexpectedError("Status: " . $code . "; Code " . $errcode . "; Message: " . $errmsg );
+            if ($errcode == 1102) throw new NotAllowedError("Status: 405; Code 1102; Message: %s" % errmsg);
+            else throw new UnexpectedError("Status: " . $code . "; Code " . $errcode . "; Message: " . $errmsg );
           } elseif ($code == 500) {
-            if ( $errcode == 1201 ) throw InternalError("Status: 500; Code 1201; Message: %s" % errmsg);
-            else throw InternalError("Status: " . $code . "; Code " . $errcode . "; Message: " . $errmsg );
+            if ( $errcode == 1201 ) throw new InternalError("Status: 500; Code 1201; Message: %s" % errmsg);
+            else throw new InternalError("Status: " . $code . "; Code " . $errcode . "; Message: " . $errmsg );
           } elseif ($code == 404) {
-            if ($errcode == 1301) throw NotFoundError("Status: 404; Code 1301; Message: " . $errmsg);
-            if ($errcode == 1302) throw NotFoundError("Status: 404; Code 1302; Message: " . $errmsg);
-            if ($errcode == 1303) throw NotFoundError("Status: 404; Code 1303; Message: " . $errmsg);
-            if ($errcode == 1304) throw AlreadyExistError("Status: 404; Code 1304; Message: " . $errmsg);
-            if ($errcode == 1305) throw AlreadyExistError("Status: 404; Code 1305; Message: " . $errmsg);
-            if ($errcode == 1306) throw AlreadyExistError("Status: 404; Code 1306; Message: " . $errmsg);
-            else throw UnexpectedError("Status: " . $code . "; Code " . $errcode . "; Message: " . $errmsg );
+            if ($errcode == 1301) throw new NotFoundError("Status: 404; Code 1301; Message: " . $errmsg);
+            if ($errcode == 1302) throw new NotFoundError("Status: 404; Code 1302; Message: " . $errmsg);
+            if ($errcode == 1303) throw new NotFoundError("Status: 404; Code 1303; Message: " . $errmsg);
+            if ($errcode == 1304) throw new AlreadyExistError("Status: 404; Code 1304; Message: " . $errmsg);
+            if ($errcode == 1305) throw new AlreadyExistError("Status: 404; Code 1305; Message: " . $errmsg);
+            if ($errcode == 1306) throw new AlreadyExistError("Status: 404; Code 1306; Message: " . $errmsg);
+            else throw new UnexpectedError("Status: " . $code . "; Code " . $errcode . "; Message: " . $errmsg );
           } else {
-            throw UnexpectedError("Status: " . $code . "; Code " . $errcode . "; Message: " . $errmsg );
+            throw new UnexpectedError("Status: " . $code . "; Code " . $errcode . "; Message: " . $errmsg );
           }
         }
     }
@@ -191,36 +192,57 @@ class Beebotte
         
         return $this->exec_curl( $ch );
     }
+    
+    private function getPublicReadUrl($owner, $channel, $resource) {
+        return self::$publicReadEndpoint . "/" . $owner . "/" . $channel . "/" . $resource;
+    }
+
+    private function getReadUrl($channel, $resource) {
+        return self::$readEndpoint . "/" . $channel . "/" . $resource;
+    }
+
+    private function getWriteUrl($channel, $resource) {
+        return self::$writeEndpoint . "/" . $channel . "/" . $resource;
+    }
+
+    private function getBulkWriteUrl($channel) {
+        return self::$bulkWriteEndpoint . "/" . $channel;
+    }
+
+    private function getPublishUrl($channel, $resource) {
+        return self::$publishEndpoint . "/" . $channel . "/" . $resource;
+    }
+
+    private function getBulkPublishUrl($channel) {
+        return self::$bulkPublishEndpoint . "/" . $channel;
+    }
 
     /**
      * Public Read
      * Reads data from the resource with the given metadata. This method expects the resource to have public access. 
-     * In Beebotte, resources follow a 3 level hierarchy: Device -> Service -> Resource
+     * In Beebotte, resources follow a 2 level hierarchy: channel -> Resource
      * Data is always associated with Resources.
      * This call will not be signed (no authentication required) as the resource is public.
      *
      * @param string $owner required the owner (username) of the resource to read from.
-     * @param string $device required the device name.
-     * @param string $service required the service name.
+     * @param string $channel required the channel name.
      * @param string $resource required the resource name to read from.
      * @param integer $limit optional number of records to return.
-     * @param string $source optional indicates whether to read from live data or from historical statistics. Accepts ('live', 'hour', 'day', 'week', 'month').
-     * @param string $metric optional indicates the metric to read. This works only with $source different than 'live'. Accepts ('avg', 'min', 'max', 'count')
+     * @param string $source optional indicates whether to read from live data or from historical statistics. Accepts ('live', 'hour-stats', 'day-stats').
+     * @param string $timerange optional indicates the time range for the records to read. 
+     *        Accepts ('Xhour', 'Xday, 'Xweek', 'Xmonth') with X a positive integer or 
+     *        one of ('today', 'yesterday', 'current-week', 'last-week', 'current-month', 'last-month', 'ytd')
      * 
      * @return array of records (JSON) on success, raises an error or failure.
      */
-    public function publicRead( $owner, $device, $service, $resource, $limit = 1, $source = "live", $metric = "avg" )
+    public function publicRead( $owner, $channel, $resource, $limit = null, $source = null, $timerange = null )
     {
         $query = array();
-        $query["owner"]    = $owner;
-        $query["device"]   = $device;
-        $query["service"]  = $service;
-        $query["resource"] = $resource;
-        $query["limit"]    = $limit;
-        $query["source"]   = $source;
-        $query["metric"]   = $metric;
-        
-        $response = $this->getData( self::$publicReadEndpoint, $query, false );
+        if( $limit ) $query["limit"]    = $limit;
+        if( $source ) $query["source"]   = $source;
+        if( $timerange ) $query["time-range"]   = $timerange;
+
+        $response = $this->getData( $this->getPublicReadUrl( $owner, $channel, $resource ), $query, false );
 
         return $response;
     }  
@@ -228,30 +250,28 @@ class Beebotte
     /**
      * Read
      * Reads data from the resource with the given metadata.  
-     * In Beebotte, resources follow a 3 level hierarchy: Device -> Service -> Resource
+     * In Beebotte, resources follow a 2 level hierarchy: channel -> Resource
      * Data is always associated with Resources.
      * This call will be signed to authenticate the calling user.
      *
-     * @param string $device required the device name.
-     * @param string $service required the service name.
+     * @param string $channel required the channel name.
      * @param string $resource required the resource name to read from.
      * @param integer $limit optional number of records to return.
-     * @param string $source optional indicates whether to read from live data or from historical statistics. Accepts ('live', 'hour', 'day', 'week', 'month').
-     * @param string $metric optional indicates the metric to read. This works only with $source different than 'live'. Accepts ('avg', 'min', 'max', 'count')
+     * @param string $source optional indicates whether to read from live data or from historical statistics. Accepts ('live', 'hour-stats', 'day-stats').
+     * @param string $timerange optional indicates the time range for the records to read. 
+     *        Accepts ('Xhour', 'Xday, 'Xweek', 'Xmonth') with X a positive integer or 
+     *        one of ('today', 'yesterday', 'current-week', 'last-week', 'current-month', 'last-month', 'ytd')
      * 
      * @return array of records (JSON) on success, raises an error or failure.
      */
-    public function read( $device, $service, $resource, $limit = 1, $source = "live", $metric = "avg" )
+    public function read( $channel, $resource, $limit = null, $source = null, $timerange = null )
     {
         $query = array();
-        $query["device"]   = $device;
-        $query["service"]  = $service;
-        $query["resource"] = $resource;
-        $query["limit"]    = $limit;
-        $query["source"]   = $source;
-        $query["metric"]   = $metric;
+        if( $limit ) $query["limit"]    = $limit;
+        if( $source ) $query["source"]   = $source;
+        if( $timerange ) $query["time-range"]   = $timerange;
         
-        $response = $this->getData( self::$readEndpoint, $query, true );
+        $response = $this->getData( $this->getReadUrl( $channel, $resource ), $query, true );
 
         return $response;
     }  
@@ -259,28 +279,23 @@ class Beebotte
     /**
      * Write (Persistent messages)
      * Writes data to the resource with the given metadata. 
-     * In Beebotte, resources follow a 3 level hierarchy: Device -> Service -> Resource
+     * In Beebotte, resources follow a 2 level hierarchy: channel -> Resource
      * Data is always associated with Resources.
      * This call will be signed to authenticate the calling user.
      *
-     * @param string $device required the device name.
-     * @param string $service required the service name.
+     * @param string $channel required the channel name.
      * @param string $resource required the resource name to write to.
-     * @param mixed $value required the value to write (persist).
+     * @param mixed $data required the data value to write (persist).
      * @param integer $ts optional timestamp in milliseconds (since epoch). If this parameter is not given, it will be automatically added with a value equal to the local system time.
-     * @param type $type optional default to 'attribute'. This is for future use.
      * 
      * @return boolean true on success, raises an error or failure.
      */
-    public function write( $device, $service, $resource, $value, $ts = null, $type = "attribute" )
+    public function write( $channel, $resource, $data, $ts = null )
     {
-        $data = array();
-        $data["device"]   = $device;
-        $data["service"]  = $service;
-        $data["resource"] = $resource;
-        $data["value"]    = $value;
+        $body = array();
+        $body["data"] = $data;
 
-        $response = $this->postData( self::$writeEndpoint, json_encode( $data ), true );
+        $response = $this->postData( $this->getWriteUrl( $channel, $resource ), json_encode( $body ), true );
 
         return $response;
     }  
@@ -288,29 +303,26 @@ class Beebotte
     /**
      * Bulk Write (Persistent messages)
      * Writes an array of data in one API call. 
-     * In Beebotte, resources follow a 3 level hierarchy: Device -> Service -> Resource
+     * In Beebotte, resources follow a 2 level hierarchy: channel -> Resource
      * Data is always associated with Resources.
      * This call will be signed to authenticate the calling user.
      *
-     * @param string $device required the device name.
+     * @param string $channel required the channel name.
      * @param array $data_array required the data array to send. Should follow the following format
      * [{
-     *   string service required the service name.
      *   string resource required the resource name to write to.
-     *   mixed value required the value to write (persist).
+     *   mixed data required the data value to write (persist).
      *   integer ts optional timestamp in milliseconds (since epoch). If this parameter is not given, it will be automatically added with a value equal to the local system time.
-     *   string $type optional default to 'attribute'. This is for future use.
      * }]
      * 
      * @return boolean true on success, raises an error or failure.
      */
-    public function bulkWrite( $device, $data_array )
+    public function bulkWrite( $channel, $data_array )
     {
-        $data = array();
-        $data["device"]   = $device;
-        $data["data"]  = $data_array;
+        $body = array();
+        $body["records"] = $data_array;
         
-        $response = $this->postData( self::$bulkWriteEndpoint, json_encode( $data ), true );
+        $response = $this->postData( $this->getBulkWriteUrl( $channel ), json_encode( $body ), true );
 
         return $response;
     }  
@@ -318,32 +330,51 @@ class Beebotte
     /**
      * Publish (Transient messages)
      * Publishes data to the resource with the given metadata. The published data will not be persisted. It will only be delivered to connected subscribers.
-     * In Beebotte, resources follow a 3 level hierarchy: Device -> Service -> Resource
+     * In Beebotte, resources follow a 2 level hierarchy: channel -> Resource
      * Data is always associated with Resources.
      * This call will be signed to authenticate the calling user.
      *
-     * @param string $device required the device name.
-     * @param string $service required the service name.
+     * @param string $channel required the channel name.
      * @param string $resource required the resource name to publish to.
-     * @param mixed $value required the value to publish (transient).
+     * @param mixed $data required the data value to publish (transient).
      * @param integer $ts optional timestamp in milliseconds (since epoch). If this parameter is not given, it will be automatically added with a value equal to the local system time.
-     * @param type $source optional additional data that will be appended to the published message. This can be a logical identifier (session id) of the originator. Use this as suits you.
      * 
      * @return boolean true on success, raises an error or failure.
      */
-    public function publish( $device, $service, $resource, $value, $ts = null, $source = null )
+    public function publish( $channel, $resource, $data, $ts = null )
     {
-        $data = array();
-        $data["device"]   = $device;
-        $data["service"]  = $service;
-        $data["resource"] = $resource;
-        $data["data"]     = $value;
+        $body = array();
+        $body["data"] = $data;
         
-        if( $source != null ) {
-          $data["source"] = $source;
-        }
+        $response = $this->postData( $this->getPublishUrl( $channel, $resource ), json_encode( $body ), true );
+
+        return $response;
+    }  
+
+    /**
+     * Bulk Publish (Transient messages)
+     * Published an array of data in one API call. 
+     * In Beebotte, resources follow a 2 level hierarchy: channel -> Resource
+     * Data is always associated with Resources.
+     * This call will be signed to authenticate the calling user.
+     *
+     * @param string $channel required the channel name.
+     * @param array $data_array required the data array to send. Should follow the following format
+     * [{
+     *   string resource required the resource name to publish to.
+     *   mixed data required the value to publish
+     *   integer ts optional timestamp in milliseconds (since epoch). If this parameter is not given, it will be automatically added with a value equal to the local system time.
+     *   string $type optional default to 'attribute'. This is for future use.
+     * }]
+     * 
+     * @return boolean true on success, raises an error or failure.
+     */
+    public function bulkPublish( $channel, $data_array )
+    {
+        $body = array();
+        $body["records"]  = $data_array;
         
-        $response = $this->postData( self::$publishEndpoint, json_encode( $data ), true );
+        $response = $this->postData( $this->getBulkWriteUrl( $channel ), json_encode( $body ), true );
 
         return $response;
     }  
@@ -353,8 +384,7 @@ class Beebotte
      * Signs the given subscribe metadata and returns the signature.
      *
      * @param string $sid required the session id of the client.
-     * @param string $device required the device name. Should start with 'presence:' for presence channels and starts with 'private:' for private channels.
-     * @param string $service optional the service name.
+     * @param string $channel required the channel name. Should start with 'presence:' for presence channels and starts with 'private:' for private channels.
      * @param string $resource optional the resource name to read from.
      * @param integer $ttl optional the number of seconds the signature should be considered as valid (currently ignored) for future use.
      * @param boolean $read optional indicates if read access is requested.
@@ -362,11 +392,11 @@ class Beebotte
      * 
      * @return array containing 'auth' element with value equal to the generated signature.
      */
-    public function auth_client($sid, $device, $service = '*', $resource = '*', $ttl = 0, $read = false, $write = false)
+    public function auth_client($sid, $channel, $resource = '*', $ttl = 0, $read = false, $write = false)
     {
         $r = $read ? "true" : "false";
         $w = $write? "true" : "false";
-        $stringToSign = $sid . ":" . $device . "." . $service . "." . $resource . ":ttl=" . $ttl . ":read=" . $r . ":write=" . $w;
+        $stringToSign = $sid . ":" . $channel . "." . $resource . ":ttl=" . $ttl . ":read=" . $r . ":write=" . $w;
         $auth = array();
         $auth["auth"] = $this->keyId . ":" . base64_encode(hash_hmac("sha1", $stringToSign, $this->secretKey, true));
         return json_encode( $auth );
@@ -380,28 +410,25 @@ class Beebotte
  * Mainly wrappers around Beebotte API calls. 
  */
 class Resource {
-    private $device   = null;
-    private $serv  = null;
-    private $res = null;
+    private $channel  = null;
+    private $res      = null;
     private $bbt      = null;
 
     /**
      * Resource
      *
      * Constructor, initializes the Resource object.
-     * In Beebotte, resources follow a 3level hierarchy: Device -> Service -> Resource
+     * In Beebotte, resources follow a 3level hierarchy: channel -> Resource
      * Data is always associated with Resources.
      *
      * @param object $bbt required reference to the Beebotte client connector.
-     * @param string $device required device name.
-     * @param string $service required service name.
+     * @param string $channel required channel name.
      * @param string $resource required resource name.
      */
-    public function __construct( $bbt, $device, $service, $resource )
+    public function __construct( $bbt, $channel, $resource )
     {
         $this->bbt    = $bbt;
-        $this->device = $device;
-        $this->serv   = $service;
+        $this->channel = $channel;
         $this->res    = $resource;
     }
 
@@ -410,13 +437,13 @@ class Resource {
      * Writes data to this resource. 
      * This call will be signed to authenticate the calling user.
      *
-     * @param mixed $value required the value to write (persist).
+     * @param mixed $data required the data value to write (persist).
      * @param integer $ts optional timestamp in milliseconds (since epoch). If this parameter is not given, it will be automatically added with a value equal to the local system time.
      * 
      * @return boolean true on success, raises an error or failure.
      */    
-    public function write($value, $ts = null) {
-        return $this->bbt->write($this->device, $this->serv, $this->res, $value, $ts);
+    public function write($data, $ts = null) {
+        return $this->bbt->write($this->channel, $this->res, $data, $ts);
     }
 
     /**
@@ -424,13 +451,13 @@ class Resource {
      * Publishes data to this resource.
      * This call will be signed to authenticate the calling user.
      *
-     * @param mixed $value required the value to publish (transient).
+     * @param mixed $data required the data value to publish (transient).
      * @param integer $ts optional timestamp in milliseconds (since epoch). If this parameter is not given, it will be automatically added with a value equal to the local system time.
      * 
      * @return boolean true on success, raises an error or failure.
      */
-    public function publish($value, $ts = null) {
-        return $this->bbt->publish($this->device, $this->serv, $this->res, $value, $ts);
+    public function publish($data, $ts = null) {
+        return $this->bbt->publish($this->channel, $this->res, $data, $ts);
     }
 
     /**
@@ -440,17 +467,19 @@ class Resource {
      * If the owner is null, the behaviour is authenticated read.      
      *
      * @param integer $limit optional number of records to return.
-     * @param string $owner required the owner (username) of the resource to read from for public read. Null to read from the user's owned device.
-     * @param string $source optional indicates whether to read from live data or from historical statistics. Accepts ('live', 'hour', 'day', 'week', 'month').
-     * @param string $metric optional indicates the metric to read. This works only with $source different than 'live'. Accepts ('avg', 'min', 'max', 'count')
+     * @param string $owner required the owner (username) of the resource to read from for public read. Null to read from the user's owned channel.
+     * @param string $source optional indicates whether to read from live data or from historical statistics. Accepts ('live', 'hour-stats', 'day-stats').
+     * @param string $timerange optional indicates the time range for the records to read. 
+     *        Accepts ('Xhour', 'Xday, 'Xweek', 'Xmonth') with X a positive integer or 
+     *        one of ('today', 'yesterday', 'current-week', 'last-week', 'current-month', 'last-month', 'ytd')
      * 
      * @return array of records (JSON) on success, raises an error or failure.
      */
-    public function read($limit = 1, $owner = null, $source = "live", $metric = "avg") {
+    public function read($owner = null, $limit = null, $source = null, $timerange = null) {
         if($owner != null) {
-            return $this->bbt->publicRead($owner, $this->device, $this->serv, $this->res, $limit, $source, $metric);
+            return $this->bbt->publicRead($owner, $this->channel, $this->res, $limit, $source, $timerange);
         }else {
-            return $this->bbt->read($this->device, $this->serv, $this->res, $limit, $source, $metric);
+            return $this->bbt->read($this->channel, $this->res, $limit, $source, $timerange);
         }
     }
 
@@ -461,7 +490,7 @@ class Resource {
      * @return array the last inserted record on success, raises an error or failure.
      */
     public function recentValue() {
-        return $this->bbt->read($this->device, $this->serv, $this->res)[0];
+        return ($this->bbt->read($this->channel, $this->res)[0]);
     }
 }
 ?>

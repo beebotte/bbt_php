@@ -317,7 +317,7 @@ class Beebotte
      * 
      * @return boolean true on success, raises an error or failure.
      */
-    public function bulkWrite( $channel, $data_array )
+    public function writeBulk( $channel, $data_array )
     {
         $body = array();
         $body["records"] = $data_array;
@@ -369,7 +369,7 @@ class Beebotte
      * 
      * @return boolean true on success, raises an error or failure.
      */
-    public function bulkPublish( $channel, $data_array )
+    public function publishBulk( $channel, $data_array )
     {
         $body = array();
         $body["records"]  = $data_array;

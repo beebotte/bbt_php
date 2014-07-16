@@ -51,7 +51,7 @@ You can write data to a resource of one of your channels using:
     
 If you have multiple records to write (to one or multiple resources of the same channel), you can use the `bulk write` method:
 
-    $bbt->bulkWrite("channel1", array(array("resource" => "resource1", "data" => "Hello"), array("resource" => "resource2", "data" => "World")));
+    $bbt->writeBulk("channel1", array(array("resource" => "resource1", "data" => "Hello"), array("resource" => "resource2", "data" => "World")));
 
 ### Publishing Data
 You can publish data to a channel resource using:
@@ -67,7 +67,7 @@ By default, published data is public, publish a private message, you need to add
 
 If you have multiple records to publish (to one or multiple resources of the same channel), you can use the `bulk publish` method:
 
-    $bbt->bulkPublish("channel1", array(array("resource" => "resource1", "data" => "Hello"), array("resource" => "resource2", "data" => "World")));
+    $bbt->publishBulk("channel1", array(array("resource" => "resource1", "data" => "Hello"), array("resource" => "resource2", "data" => "World")));
 
 ### Resource Object
 The library provides a Resource Class that can be used as follows

@@ -1,5 +1,5 @@
 <?php
- 
+
 include_once "bbt_exceptions.php";
 
 /**
@@ -14,7 +14,7 @@ class Beebotte
     private $secretKey = null;
     private $port = null;
     private $hostname = null;
-    
+
     private static $publicReadEndpoint  = "/v1/public/data/read";
     private static $readEndpoint        = "/v1/data/read";
     private static $writeEndpoint       = "/v1/data/write";
@@ -82,7 +82,7 @@ class Beebotte
           }
         }
     }
-    
+
     /**
      * Creates a signature of an API call to authenticate the user and verify message integrity.
      *
@@ -122,37 +122,37 @@ class Beebotte
      * @param string $uri required the uri endpoint.
      * @param string $body required the data to send.
      * @param boolean $auth optional Indicates if the Post request should be authenticated (defaults to true).
-     * 
+     *
      * @return array The response data in JSON format if success, raises an error or failure.
      */
     private function postData($uri, $body, $auth = true)
     {
         # Set cURL options
         $ch = curl_init();
-        
+
         if ( $ch === false )
         {
             throw new BeebotteException("Error while initializing cURL!");
         }
-        
+
         $url  = $this->hostname . ":" . $this->port . $uri;
         $md5  = base64_encode(md5($body, true));
-        
+
         $date = date(DATE_RFC2822);
-        
+
         curl_setopt( $ch, CURLOPT_URL, $url );
         curl_setopt( $ch, CURLOPT_POST, true );
-        
+
         if( $auth === true ) {
             $sig = $this->signRequest("POST", $uri, $date, "application/json", $md5);
             curl_setopt( $ch, CURLOPT_HTTPHEADER, array ( "Content-MD5: " . $md5, "Content-Type: application/json", "Date: " . $date , "Authorization: " . $sig ) );
         }else {
             curl_setopt( $ch, CURLOPT_HTTPHEADER, array ( "Content-MD5: " . $md5, "Content-Type: application/json", "Date: " . $date ) );
         }
-        
+
         curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
         curl_setopt( $ch, CURLOPT_POSTFIELDS, $body );
-        
+
         return $this->exec_curl( $ch );
     }
 
@@ -162,37 +162,37 @@ class Beebotte
      * @param string $uri required the uri endpoint.
      * @param array $query required the query parameters in JSON format.
      * @param boolean $auth optional Indicates if the Post request should be authenticated (defaults to true).
-     * 
+     *
      * @return array The response data in JSON format if success, raises an error or failure.
      */
     private function getData($uri, $query, $auth = true)
     {
         # Set cURL options
         $ch = curl_init();
-        
+
         if ( $ch === false )
         {
             throw new BeebotteException("Error while initializing cURL!");
         }
-        
+
         $full_uri  = $uri . "?" . http_build_query( $query );
         $url  = $this->hostname . ":" . $this->port . $full_uri;
         $date = date(DATE_RFC2822);
 
         curl_setopt( $ch, CURLOPT_URL, $url );
-        
+
         if( $auth === true ) {
             $sig = $this->signRequest("GET", $full_uri, $date, "application/json");
             curl_setopt( $ch, CURLOPT_HTTPHEADER, array ( "Content-Type: application/json", "Date: " . $date , "Authorization: " . $sig ) );
         }else {
             curl_setopt( $ch, CURLOPT_HTTPHEADER, array ( "Content-Type: application/json", "Date: " . $date ) );
         }
-        
+
         curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
-        
+
         return $this->exec_curl( $ch );
     }
-    
+
     private function getPublicReadUrl($owner, $channel, $resource) {
         return self::$publicReadEndpoint . "/" . $owner . "/" . $channel . "/" . $resource;
     }
@@ -219,7 +219,7 @@ class Beebotte
 
     /**
      * Public Read
-     * Reads data from the resource with the given metadata. This method expects the resource to have public access. 
+     * Reads data from the resource with the given metadata. This method expects the resource to have public access.
      * In Beebotte, resources follow a 2 level hierarchy: channel -> Resource
      * Data is always associated with Resources.
      * This call will not be signed (no authentication required) as the resource is public.
@@ -229,10 +229,10 @@ class Beebotte
      * @param string $resource required the resource name to read from.
      * @param integer $limit optional number of records to return.
      * @param string $source optional indicates whether to read from live data or from historical statistics. Accepts ('live', 'hour-stats', 'day-stats').
-     * @param string $timerange optional indicates the time range for the records to read. 
-     *        Accepts ('Xhour', 'Xday, 'Xweek', 'Xmonth') with X a positive integer or 
+     * @param string $timerange optional indicates the time range for the records to read.
+     *        Accepts ('Xhour', 'Xday, 'Xweek', 'Xmonth') with X a positive integer or
      *        one of ('today', 'yesterday', 'current-week', 'last-week', 'current-month', 'last-month', 'ytd')
-     * 
+     *
      * @return array of records (JSON) on success, raises an error or failure.
      */
     public function publicRead( $owner, $channel, $resource, $limit = null, $source = null, $timerange = null )
@@ -245,11 +245,11 @@ class Beebotte
         $response = $this->getData( $this->getPublicReadUrl( $owner, $channel, $resource ), $query, false );
 
         return $response;
-    }  
+    }
 
     /**
      * Read
-     * Reads data from the resource with the given metadata.  
+     * Reads data from the resource with the given metadata.
      * In Beebotte, resources follow a 2 level hierarchy: channel -> Resource
      * Data is always associated with Resources.
      * This call will be signed to authenticate the calling user.
@@ -258,10 +258,10 @@ class Beebotte
      * @param string $resource required the resource name to read from.
      * @param integer $limit optional number of records to return.
      * @param string $source optional indicates whether to read from live data or from historical statistics. Accepts ('live', 'hour-stats', 'day-stats').
-     * @param string $timerange optional indicates the time range for the records to read. 
-     *        Accepts ('Xhour', 'Xday, 'Xweek', 'Xmonth') with X a positive integer or 
+     * @param string $timerange optional indicates the time range for the records to read.
+     *        Accepts ('Xhour', 'Xday, 'Xweek', 'Xmonth') with X a positive integer or
      *        one of ('today', 'yesterday', 'current-week', 'last-week', 'current-month', 'last-month', 'ytd')
-     * 
+     *
      * @return array of records (JSON) on success, raises an error or failure.
      */
     public function read( $channel, $resource, $limit = null, $source = null, $timerange = null )
@@ -270,15 +270,15 @@ class Beebotte
         if( $limit ) $query["limit"]    = $limit;
         if( $source ) $query["source"]   = $source;
         if( $timerange ) $query["time-range"]   = $timerange;
-        
+
         $response = $this->getData( $this->getReadUrl( $channel, $resource ), $query, true );
 
         return $response;
-    }  
+    }
 
     /**
      * Write (Persistent messages)
-     * Writes data to the resource with the given metadata. 
+     * Writes data to the resource with the given metadata.
      * In Beebotte, resources follow a 2 level hierarchy: channel -> Resource
      * Data is always associated with Resources.
      * This call will be signed to authenticate the calling user.
@@ -287,7 +287,7 @@ class Beebotte
      * @param string $resource required the resource name to write to.
      * @param mixed $data required the data value to write (persist).
      * @param integer $ts optional timestamp in milliseconds (since epoch). If this parameter is not given, it will be automatically added with a value equal to the local system time.
-     * 
+     *
      * @return boolean true on success, raises an error or failure.
      */
     public function write( $channel, $resource, $data, $ts = null )
@@ -298,11 +298,11 @@ class Beebotte
         $response = $this->postData( $this->getWriteUrl( $channel, $resource ), json_encode( $body ), true );
 
         return $response;
-    }  
+    }
 
     /**
      * Bulk Write (Persistent messages)
-     * Writes an array of data in one API call. 
+     * Writes an array of data in one API call.
      * In Beebotte, resources follow a 2 level hierarchy: channel -> Resource
      * Data is always associated with Resources.
      * This call will be signed to authenticate the calling user.
@@ -314,18 +314,18 @@ class Beebotte
      *   mixed data required the data value to write (persist).
      *   integer ts optional timestamp in milliseconds (since epoch). If this parameter is not given, it will be automatically added with a value equal to the local system time.
      * }]
-     * 
+     *
      * @return boolean true on success, raises an error or failure.
      */
     public function writeBulk( $channel, $data_array )
     {
         $body = array();
         $body["records"] = $data_array;
-        
+
         $response = $this->postData( $this->getBulkWriteUrl( $channel ), json_encode( $body ), true );
 
         return $response;
-    }  
+    }
 
     /**
      * Publish (Transient messages)
@@ -338,22 +338,22 @@ class Beebotte
      * @param string $resource required the resource name to publish to.
      * @param mixed $data required the data value to publish (transient).
      * @param integer $ts optional timestamp in milliseconds (since epoch). If this parameter is not given, it will be automatically added with a value equal to the local system time.
-     * 
+     *
      * @return boolean true on success, raises an error or failure.
      */
     public function publish( $channel, $resource, $data, $ts = null )
     {
         $body = array();
         $body["data"] = $data;
-        
+
         $response = $this->postData( $this->getPublishUrl( $channel, $resource ), json_encode( $body ), true );
 
         return $response;
-    }  
+    }
 
     /**
      * Bulk Publish (Transient messages)
-     * Published an array of data in one API call. 
+     * Published an array of data in one API call.
      * In Beebotte, resources follow a 2 level hierarchy: channel -> Resource
      * Data is always associated with Resources.
      * This call will be signed to authenticate the calling user.
@@ -366,18 +366,18 @@ class Beebotte
      *   integer ts optional timestamp in milliseconds (since epoch). If this parameter is not given, it will be automatically added with a value equal to the local system time.
      *   string $type optional default to 'attribute'. This is for future use.
      * }]
-     * 
+     *
      * @return boolean true on success, raises an error or failure.
      */
     public function publishBulk( $channel, $data_array )
     {
         $body = array();
         $body["records"]  = $data_array;
-        
+
         $response = $this->postData( $this->getBulkWriteUrl( $channel ), json_encode( $body ), true );
 
         return $response;
-    }  
+    }
 
     /**
      * Client Authentication (used for the Presence and Resource subscription process)
@@ -389,7 +389,7 @@ class Beebotte
      * @param integer $ttl optional the number of seconds the signature should be considered as valid (currently ignored) for future use.
      * @param boolean $read optional indicates if read access is requested.
      * @param boolean $write optional indicates if write access is requested.
-     * 
+     *
      * @return array containing 'auth' element with value equal to the generated signature.
      */
     public function auth_client($sid, $channel, $resource = '*', $ttl = 0, $read = false, $write = false)
@@ -401,13 +401,28 @@ class Beebotte
         $auth["auth"] = $this->keyId . ":" . base64_encode(hash_hmac("sha1", $stringToSign, $this->secretKey, true));
         return json_encode( $auth );
     }
+
+    /**
+     * Client Authentication (used for the Presence and Resource subscription process)
+     * Signs the given preconstructed string to sign and returns the signature.
+     *
+     * @param string $stringToSign precomputed string to sign.
+     *
+     * @return array containing 'auth' element with value equal to the generated signature.
+     */
+    public function sign($stringToSign)
+    {
+        $auth = array();
+        $auth["auth"] = $this->keyId . ":" . base64_encode(hash_hmac("sha1", $stringToSign, $this->secretKey, true));
+        return json_encode( $auth );
+    }
 }
 
 /**
  * @class
  * Utility class for dealing with Resources
  * Contains methods for sending persistent and transient messages and for reading data.
- * Mainly wrappers around Beebotte API calls. 
+ * Mainly wrappers around Beebotte API calls.
  */
 class Resource {
     private $channel  = null;
@@ -425,7 +440,7 @@ class Resource {
      * @param string $channel required channel name.
      * @param string $resource required resource name.
      */
-    public function __construct( $bbt, $channel, $resource )
+    public function __construct( $bbt, $channel, $resource ) 
     {
         $this->bbt    = $bbt;
         $this->channel = $channel;
@@ -434,14 +449,14 @@ class Resource {
 
     /**
      * Write (Persistent messages)
-     * Writes data to this resource. 
+     * Writes data to this resource.
      * This call will be signed to authenticate the calling user.
      *
      * @param mixed $data required the data value to write (persist).
      * @param integer $ts optional timestamp in milliseconds (since epoch). If this parameter is not given, it will be automatically added with a value equal to the local system time.
-     * 
+     *
      * @return boolean true on success, raises an error or failure.
-     */    
+     */
     public function write($data, $ts = null) {
         return $this->bbt->write($this->channel, $this->res, $data, $ts);
     }
@@ -453,7 +468,7 @@ class Resource {
      *
      * @param mixed $data required the data value to publish (transient).
      * @param integer $ts optional timestamp in milliseconds (since epoch). If this parameter is not given, it will be automatically added with a value equal to the local system time.
-     * 
+     *
      * @return boolean true on success, raises an error or failure.
      */
     public function publish($data, $ts = null) {
@@ -464,15 +479,15 @@ class Resource {
      * Read
      * Reads data from the this resource.
      * If the owner is set (value different than null) the behaviour is Public Read (no authentication).
-     * If the owner is null, the behaviour is authenticated read.      
+     * If the owner is null, the behaviour is authenticated read.
      *
      * @param integer $limit optional number of records to return.
      * @param string $owner required the owner (username) of the resource to read from for public read. Null to read from the user's owned channel.
      * @param string $source optional indicates whether to read from live data or from historical statistics. Accepts ('live', 'hour-stats', 'day-stats').
-     * @param string $timerange optional indicates the time range for the records to read. 
-     *        Accepts ('Xhour', 'Xday, 'Xweek', 'Xmonth') with X a positive integer or 
+     * @param string $timerange optional indicates the time range for the records to read.
+     *        Accepts ('Xhour', 'Xday, 'Xweek', 'Xmonth') with X a positive integer or
      *        one of ('today', 'yesterday', 'current-week', 'last-week', 'current-month', 'last-month', 'ytd')
-     * 
+     *
      * @return array of records (JSON) on success, raises an error or failure.
      */
     public function read($owner = null, $limit = null, $source = null, $timerange = null) {
@@ -485,7 +500,7 @@ class Resource {
 
     /**
      * Read
-     * Reads the last inserted record. 
+     * Reads the last inserted record.
      *
      * @return array the last inserted record on success, raises an error or failure.
      */

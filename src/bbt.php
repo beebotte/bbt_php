@@ -59,7 +59,7 @@ class Beebotte
             if ($errcode == 1101) throw new AuthenticationError( "Status: 400; Code 1101; Message: " . $errmsg );
             elseif ($errcode == 1401) throw new ParameterError("Status: 400; Code 1401; Message: " . $errmsg );
             elseif ($errcode == 1403) throw new BadRequestError("Status: 400; Code 1403; Message: " . $errmsg );
-            elseif ($errcode == 1404) throw new TypeError("Status: 400; Code 1404; Message: " . $errmsg );
+            elseif ($errcode == 1404) throw new DataTypeError("Status: 400; Code 1404; Message: " . $errmsg );
             elseif ($errcode == 1405) throw new BadTypeError("Status: 400; Code 1405; Message: " . $errmsg );
             elseif ($errcode == 1406) throw new PayloadLimitError("Status: 400; Code 1406; Message: " . $errmsg );
             else throw new UnexpectedError("Status: " . $code . "; Code " . $errcode . "; Message: " . $errmsg );
@@ -440,7 +440,7 @@ class Resource {
      * @param string $channel required channel name.
      * @param string $resource required resource name.
      */
-    public function __construct( $bbt, $channel, $resource ) 
+    public function __construct( $bbt, $channel, $resource )
     {
         $this->bbt    = $bbt;
         $this->channel = $channel;

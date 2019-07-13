@@ -39,7 +39,7 @@ class ParameterError extends Exception
 {
 }
 
-class TypeError extends Exception
+class DataTypeError extends Exception
 {
 }
 

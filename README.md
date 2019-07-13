@@ -91,7 +91,7 @@ channel), you can use the `bulk write` method:
 You can publish data to a channel resource using:
 
 ```
-  $bbt->publish("any_channel", "any_resource", "Hello Horld");
+  $bbt->publish("any_channel", "any_resource", "Hello World");
 ```
 
 Published data is transient. It will not saved to any database; rather, it will
@@ -103,7 +103,7 @@ By default, published data is public, publish a private message, you need to
 add `private-` prefix to the channel name like this:
 
 ```
-  $bbt->publish("private-any_channel", "any_resource", "Hello Horld");
+  $bbt->publish("private-any_channel", "any_resource", "Hello World");
 ```
 
 If you have multiple records to publish (to one or multiple resources of the
@@ -160,6 +160,6 @@ it signed:
 ```
 
 ## License
-Copyright 2013 - 2018 Beebotte.
+Copyright 2013 - 2019 Beebotte.
 
 [The MIT License](http://opensource.org/licenses/MIT)
